@@ -1,4 +1,4 @@
-# Domain name or IP address of Minecraft server.
+# Domain name or IP address of Minecraft server..
 # SkypeCraft is only tested with 127.0.0.1 (localhost).
 MINECRAFT_RCON_HOST = '127.0.0.1'
 
@@ -7,6 +7,14 @@ MINECRAFT_RCON_PORT = 25575
 
 # Same as rcon.password in your server.properties.
 MINECRAFT_RCON_PASSWORD = ''
+
+# Is the Skypecraft Bukkit plugin installed?
+# yes or no
+BUKKIT_PLUGIN_INSTALLED = 'no'
+
+# server message on or off
+# will post say <message> message in skype chat
+SERVER_MESSAGE = 'on'
 
 # Location of server.log. Do not use backslashes (\), use regular slashes (/) instead.
 MINECRAFT_SERVER_LOG = 'C:/minecraft_server/server.log'

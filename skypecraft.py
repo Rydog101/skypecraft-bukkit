@@ -4,7 +4,7 @@
 # https://github.com/kirov/skypecraft
 #
 # Copyright (c) 2012-2013 Evgeniy Kirov
-# See the file LICENSE for copying permission.
+# See the file LICENSE for copying permission..
 
 from datetime import datetime
 import rconite
@@ -83,10 +83,14 @@ class Daemon(object):
         self.log('Sent to Skype: %s' % msg)
 
     def send_rcon(self, msg):
-        for part in textwrap.wrap(msg, 60):
-            part = part.encode('utf-8')
-            self.rcon.command('say %s' % part)
-        self.log('Sent to Minecraft: %s' % msg)
+		if settings.BUKKIT_PLUGIN_INSTALLED == 'yes':
+			bpi = 'skype'
+		else:
+			bpi = 'say'
+		for part in textwrap.wrap(msg, 60):
+			part = part.encode('utf-8')
+			self.rcon.command('%s %s' % (bpi, part))
+		self.log('Sent to Minecraft: %s' % msg)
 
     def on_skype_message(self, msg, status):
         if status != 'RECEIVED':
@@ -104,17 +108,21 @@ class Daemon(object):
         self.skype.Mute = True
 
     def on_server_log(self, line):
-        line = self.sanitize(line).decode(settings.MINECRAFT_SERVER_LOG_ENCODING)
+		if settings.SERVER_MESSAGE == 'on':
+			sm = '^[0-9\-\s:]{20}\[INFO\]\s((?:\<.+\>\s.+)|(?:\[Server\]\s.+))$'
+		else:
+			sm =  '^[0-9\-\s:]{20}\[INFO\]\s\<.+\>\s(.+)$'
+		line = self.sanitize(line).decode(settings.MINECRAFT_SERVER_LOG_ENCODING)
         # checking if user command
-        match = re.compile('^[0-9\-\s:]{20}\[INFO\]\s\<.+\>\s(.+)$').match(line)
-        if match and match.groups()[0] in self.minecraft_commands:
-            self.log('Someone has sent a command "%s"' % match.groups()[0])
-            getattr(self, 'command_%s' % match.groups()[0])()
-            return
+		# match = re.compile(sm).match(line)
+		# if match and match.groups()[0] in self.minecraft_commands:
+		#	self.log('Someone has sent a command "%s"' % match.groups()[0])
+		#	getattr(self, 'command_%s' % match.groups()[0])()
+		#	return
         # checking if this is a message from user
-        match = re.compile('^[0-9\-\s:]{20}\[INFO\]\s(\<.+\>\s.+)$').match(line)
-        if match:
-            self.send_skype(match.groups()[0])
+		match = re.compile(sm).match(line)
+		if match:
+			self.send_skype(match.groups()[0])
 
     def command_players(self):
         line = self.rcon.command('list')
