@@ -4,7 +4,7 @@
 # https://github.com/kirov/skypecraft
 #
 # Copyright (c) 2012-2013 Evgeniy Kirov
-# See the file LICENSE for copying permission..
+# See the file LICENSE for copying permission.
 
 from datetime import datetime
 import rconite

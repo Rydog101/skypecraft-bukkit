@@ -1,4 +1,4 @@
-# Domain name or IP address of Minecraft server..
+# Domain name or IP address of Minecraft server.
 # SkypeCraft is only tested with 127.0.0.1 (localhost).
 MINECRAFT_RCON_HOST = '127.0.0.1'
 
