@@ -14,6 +14,10 @@ import sys
 import tailer
 import textwrap
 
+import StringIO
+import os
+import ConfigParser
+
 import settings
 
 reload(sys)
@@ -22,10 +26,20 @@ sys.setdefaultencoding('utf-8')
 
 class Daemon(object):
 
-    skype_commands = ['players', 'call']
+    skype_commands = ['players', 'call', 'kick', 'ban', 'jail']
     minecraft_commands = ['call']
 
     def __init__(self):
+        config = StringIO.StringIO()
+        config.write('[dummysection]\n')
+        config.write(open(settings.MINECRAFT_SERVER_LOCATION + 'server.properties').read())
+        config.seek(0, os.SEEK_SET)
+        cp = ConfigParser.ConfigParser()
+        cp.readfp(config)
+        self.rconport = cp.get('dummysection', 'rcon.port')
+        self.serverport = cp.get('dummysection', 'server-port')
+        self.rconpassword = cp.get('dummysection', 'rcon.password')
+
         self.log('Hello!')
         self.setup_skype()
         self.setup_rcon()
@@ -67,14 +81,15 @@ class Daemon(object):
 
     def setup_rcon(self):
         self.rcon = rconite.connect(
-            settings.MINECRAFT_RCON_HOST,
-            settings.MINECRAFT_RCON_PORT,
-            settings.MINECRAFT_RCON_PASSWORD
+            'localhost',
+            self.rconport,
+            self.rconpassword
         )
         self.log('Connected to RCon')
+        self.skype_chat.SendMessage('Minecraft Server running on port ' + self.serverport)
 
     def setup_server_log(self):
-        self.server_log = open(settings.MINECRAFT_SERVER_LOG)
+        self.server_log = open(settings.MINECRAFT_SERVER_LOCATION + 'server.log')
         self.log('Opened server.log')
 
     def send_skype(self, msg):
@@ -98,43 +113,91 @@ class Daemon(object):
         if msg.ChatName != settings.SKYPE_CHAT_NAME:
             return
         msg.MarkAsSeen()
-        if msg.Body in self.skype_commands:
-            self.log('Someone has sent a command "%s"' % msg.Body)
-            getattr(self, 'command_%s' % msg.Body)()
-            return
+        parts = msg.Body.split()
+        if parts and parts[0] in self.skype_commands:
+            command = parts[0]
+            args = parts[1:]
+            self.log('Someone has sent a command "%s"' % command)
+            if getattr(self, 'command_%s' % command)(*args):
+                return
         self.send_rcon(u'[Skype] <%s> %s' % (msg.Sender.FullName, msg.Body))
 
     def on_skype_call(self, *args, **kwargs):
         self.skype.Mute = True
 
     def on_server_log(self, line):
-		if settings.SERVER_MESSAGE == 'on':
-			sm = '^[0-9\-\s:]{20}\[INFO\]\s((?:\<.+\>\s.+)|(?:\[Server\]\s.+))$'
-		else:
-			sm =  '^[0-9\-\s:]{20}\[INFO\]\s\<.+\>\s(.+)$'
-		line = self.sanitize(line).decode(settings.MINECRAFT_SERVER_LOG_ENCODING)
+        line = self.sanitize(line).decode(settings.MINECRAFT_SERVER_LOG_ENCODING)
         # checking if user command
-		# match = re.compile(sm).match(line)
-		# if match and match.groups()[0] in self.minecraft_commands:
-		#	self.log('Someone has sent a command "%s"' % match.groups()[0])
-		#	getattr(self, 'command_%s' % match.groups()[0])()
-		#	return
+        match = re.compile('^[0-9\-\s:]{20}\[INFO\]\s\<.+\>\s(\w+)(\s.+)?$').match(line)
+        if match and match.groups()[0] in self.minecraft_commands:
+            command = match.groups()[0]
+            args = match.groups()[1]
+            args = args.split() if args else []
+            self.log('Someone has sent a command "%s"' % command)
+            if getattr(self, 'command_%s' % command)(*args):
+                return
         # checking if this is a message from user
-		match = re.compile(sm).match(line)
-		if match:
-			self.send_skype(match.groups()[0])
+        match_base = '^[0-9\-\s:]{20}\[INFO\]\s(%s)$'
 
-    def command_players(self):
+        match_vars = [
+            '\<.+\>\s.+',
+        ]
+
+        if settings.SERVER_MESSAGE == 'on':
+            match_vars.append('\[Server\]\s.+')
+        if settings.BAN_MESSAGE == 'on':
+            match_vars.append('.+\:\sBanned player\s.+')
+            match_vars.append('Player\s.+\sbanned\s.+\sfor\s.+')
+        if settings.KICK_MESSAGE == 'on':
+            match_vars.append('.+\:\sKicked player\s.+')
+            match_vars.append('Player\s.+\skicked\s.+\sfor\s.+')
+        if settings.JOIN_MESSAGE == 'on':
+            match_vars.append('.+\[\/.+\]\slogged\sin.+')
+        if settings.LEAVE_MESSAGE == 'on':
+            match_vars.append('.+\sleft\sthe\sgame.')
+
+
+        matchjoin = match_base % '|'.join(map(lambda a: '(?:%s)' % a, match_vars))
+
+        match = re.compile(matchjoin).match(line)
+
+        if match:
+            text = match.groups()[0] 
+            text = re.compile('.\sWith reason\:$').sub('', text)
+            text = re.compile('\[\/.+\]\slogged\sin.+').sub(' joined the game', text)
+            self.send_skype(text)
+
+    def command_players(self, *args):
         line = self.rcon.command('list')
         line = self.sanitize(line)
         line = line.replace('online:', 'online: ')
         self.send_skype(line)
+        return True
 
-    def command_call(self):
+    def command_call(self, *args):
+        if settings.CALL_COMMAND != 'on':
+            return False
         try:
             self.skype.PlaceCall(settings.SKYPE_CHAT_NAME)
         except ValueError:
             pass
+        return True
+
+    def command_kick(self, *args):
+        if len(args) != 1:
+            return False
+        elif settings.KICK_COMMAND != 'on':
+            return False
+        self.rcon.command("kick %s" % args[0])
+        return True
+
+    def command_ban(self, *args):
+        if len(args) != 1:
+            return False
+        elif settings.BAN_COMMAND != 'on':
+            return False
+        self.rcon.command("ban %s" % args[0])
+        return True
 
 if __name__ == '__main__':
     d = Daemon()

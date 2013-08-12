@@ -1,22 +1,5 @@
-# Domain name or IP address of Minecraft server.
-# SkypeCraft is only tested with 127.0.0.1 (localhost).
-MINECRAFT_RCON_HOST = '127.0.0.1'
-
-# Same as rcon.port in your server.properties.
-MINECRAFT_RCON_PORT = 25575
-
-# Same as rcon.password in your server.properties.
-MINECRAFT_RCON_PASSWORD = ''
-
-# Is the Skypecraft Bukkit plugin installed?
-# yes or no
-BUKKIT_PLUGIN_INSTALLED = 'no'
-
-# server message on or off
-# will post say <message> message in skype chat
-SERVER_MESSAGE = 'on'
-
-# Location of server.log. Do not use backslashes (\), use regular slashes (/) instead.
+# Location of server. Do not use backslashes (\), use regular slashes (/) instead.
+# Make sure there is a / after the path or skypecraft will crash
 MINECRAFT_SERVER_LOG = 'C:/minecraft_server/server.log'
 
 # Encoding of the file. "cp1251" is for Cyrillic on Windows.
@@ -25,3 +8,37 @@ MINECRAFT_SERVER_LOG_ENCODING = 'cp1251'
 # Open your group chat, type "/get name" (without any slashes) and hit Enter.
 # Then copy everything after "name=" and paste it here.
 SKYPE_CHAT_NAME = '#nickname1/$nickname2;f549630fbce3d5c7'
+
+
+
+# Is the Skypecraft Bukkit plugin installed?
+# yes or no
+BUKKIT_PLUGIN_INSTALLED = 'yes'
+
+# server message on or off
+# will post say <message> message in skype chat
+SERVER_MESSAGE = 'on'
+
+# Ban message on or off
+# will post the message after someone is banned  in skype chat
+BAN_MESSAGE = 'on'
+
+# Kick message on or off
+# will post the message after someone is kicked in skype chat
+KICK_MESSAGE = 'on'
+
+# Join message on or off
+# will post join message when player join the server in skype chat
+JOIN_MESSAGE = 'on'
+
+# Leave message on or off
+# will post disconnect message when player disconnects from the server in skype chat
+LEAVE_MESSAGE = 'on'
+
+# Kick command on or off
+# allows you to kick players from the skype chat
+KICK_COMMAND = 'on'
+
+# Ban command on or off
+# allows you to ban players from the skype chat
+BAN_COMMAND = 'on'
