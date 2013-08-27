@@ -1,6 +1,6 @@
 # Location of server. Do not use backslashes (\), use regular slashes (/) instead.
 # Make sure there is a / after the path or skypecraft will crash
-MINECRAFT_SERVER_LOG = 'C:/minecraft_server/server.log'
+MINECRAFT_SERVER_LOCATION = 'C:/minecraft_server/'
 
 # Encoding of the file. "cp1251" is for Cyrillic on Windows.
 MINECRAFT_SERVER_LOG_ENCODING = 'cp1251'
